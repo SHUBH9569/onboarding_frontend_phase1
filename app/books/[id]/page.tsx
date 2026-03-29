@@ -53,12 +53,15 @@ type Book = {
   author?: Author | null;
   metadata?: Metadata | null;
 };
+interface BooksQueryResult {
+  books: Book[];
+}
 
 export default function BookDetailsPage({ params }: PageProps) {
   const { id } = use(params);
 
   const { data, loading, error } =
-    useQuery(GET_BOOK_BY_ID);
+    useQuery<BooksQueryResult>(GET_BOOK_BY_ID);
 
   if (loading) return <Loader/>;
   if (error) return <p>Error loading book</p>;
