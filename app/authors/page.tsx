@@ -8,6 +8,7 @@ import { DELETE_AUTHOR, UPDATE_AUTHOR } from "@/graphql/mutations";
 import AuthorForm from "@/components/AuthorForm";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Loader } from "@/components/ui/loader";
 
 type Book = {
   id: string;
@@ -126,7 +127,7 @@ export default function AuthorsPage() {
     }
   };
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) return <Loader/>;
   if (error) return <p>Error: {error.message}</p>;
 
   return (

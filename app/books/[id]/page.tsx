@@ -1,11 +1,13 @@
 "use client";
 
+import { use } from "react";
 import { useQuery } from "@apollo/client/react";
 import { gql } from "@apollo/client";
 import { Card, CardContent } from "@/components/ui/card";
+import { Loader } from "@/components/ui/loader";
 
 const GET_BOOK_BY_ID = gql`
-  query GetBook($id: ID!) {
+  query GetBook {
     books {
       id
       title
@@ -24,44 +26,44 @@ const GET_BOOK_BY_ID = gql`
   }
 `;
 
-type PageProps = {
-  params: {
-    id: string;
-  };
-};
 
+type PageProps = {
+  params: Promise<{
+    id: string;
+  }>;
+};
 type Review = {
   user: string;
   comment: string;
   rating: number;
 };
 
+type Metadata = {
+  avgRating: number | null;
+  reviews: Review[];
+};
+
+type Author = {
+  name: string;
+};
+
 type Book = {
   id: string;
   title: string;
-  author?: {
-    name: string;
-  };
-  metadata?: {
-    avgRating?: number;
-    reviews?: Review[];
-  };
-};
-
-type GetBooksResponse = {
-  books: Book[];
+  author?: Author | null;
+  metadata?: Metadata | null;
 };
 
 export default function BookDetailsPage({ params }: PageProps) {
-  const { id } = params;
+  const { id } = use(params);
 
   const { data, loading, error } =
-    useQuery<GetBooksResponse>(GET_BOOK_BY_ID);
+    useQuery(GET_BOOK_BY_ID);
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) return <Loader/>;
   if (error) return <p>Error loading book</p>;
 
-  const book = data?.books.find((b) => b.id === id);
+  const book = data?.books.find((b: Book) => b.id === id);
 
   if (!book) return <p>Book not found</p>;
 
@@ -86,7 +88,7 @@ export default function BookDetailsPage({ params }: PageProps) {
 
         {book.metadata?.reviews?.length ? (
           <div className="space-y-3">
-            {book.metadata.reviews.map((review, index) => (
+            {book.metadata.reviews.map((review: Review, index: number) => (
               <Card key={index}>
                 <CardContent className="p-4">
                   <p className="font-semibold">{review.user}</p>

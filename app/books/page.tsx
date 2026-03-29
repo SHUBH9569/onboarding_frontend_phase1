@@ -8,10 +8,14 @@ import { ADD_BOOK_REVIEW, DELETE_BOOK, UPDATE_BOOK } from "@/graphql/mutations";
 import BookForm from "@/components/BookForm";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { GET_AUTHORS } from "@/graphql/queries";
+import { Loader } from "@/components/ui/loader";
 
 type Book = {
   id: string;
   title: string;
+  description?: string;
+  publishedDate?: string;
   author?: {
     id?: string;
     name: string;
@@ -30,6 +34,15 @@ type GetBooksResponse = {
   books: Book[];
 };
 
+type AuthorOption = {
+  id: string;
+  name: string;
+};
+
+type GetAuthorsResponse = {
+  authors: AuthorOption[];
+};
+
 export default function BooksPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -45,7 +58,7 @@ export default function BooksPage() {
   const pageSize = 8;
 
   const { data, loading, error } = useQuery<GetBooksResponse>(GET_BOOKS);
-
+  const { data: authorData } = useQuery<GetAuthorsResponse>(GET_AUTHORS);
   const [updateBook, { loading: isUpdating }] = useMutation(UPDATE_BOOK, {
     refetchQueries: [{ query: GET_BOOKS }],
   });
@@ -120,18 +133,29 @@ export default function BooksPage() {
     setSelectedIds((prev) => prev.filter((item) => item !== id));
   };
 
-  const handleUpdateBook = async (values: { title: string; authorId: string }) => {
+  const handleUpdateBook = async (values: {
+    title: string;
+    authorId: string;
+    description: string;
+    publishedDate: string;
+  }) => {
     if (!editingBook) return;
 
-    await updateBook({
-      variables: {
-        id: editingBook.id,
-        title: values.title,
-        author_id: values.authorId,
-      },
-    });
+    try {
+      await updateBook({
+        variables: {
+          id: editingBook.id,
+          title: values.title,
+          description: values.description || null,
+          published_date: values.publishedDate || null,
+        },
+      });
 
-    setEditingBook(null);
+      setEditingBook(null);
+    } catch (err) {
+      console.error("Update failed:", err);
+      alert("Update failed. Check console.");
+    }
   };
 
   const handleDeleteSingle = async (id: string) => {
@@ -188,7 +212,8 @@ export default function BooksPage() {
     }
   };
 
-  if (loading) return <p>Loading...</p>;
+  // if (loading) return <p>Loading...</p>;
+  if(loading) return <Loader/>
   if (error) return <p>Error: {error.message}</p>;
 
   return (
@@ -215,15 +240,19 @@ export default function BooksPage() {
         <div className="rounded-box border border-base-300 bg-base-100 p-4">
           <h2 className="mb-3 text-lg font-semibold">Edit Book</h2>
           <BookForm
-            authors={[]}
+            key={editingBook.id}
+            authors={authorData?.authors ?? []}
             onSubmit={handleUpdateBook}
             initialValues={{
               title: editingBook.title,
               authorId: editingBook.author?.id || "",
+              description: editingBook.description || "",
+              publishedDate: editingBook.publishedDate || "",
             }}
             submitLabel="Update Book"
             isSubmitting={isUpdating}
             onCancel={() => setEditingBook(null)}
+            disableAuthorSelection
           />
         </div>
       ) : null}
@@ -302,7 +331,7 @@ export default function BooksPage() {
           <tbody>
             {paginatedBooks.map((book) => {
               const isChecked = selectedIds.includes(book.id);
-              const preview = `A quick preview of ${book.title}`;
+              const preview = book.description || "No description available";
 
               return (
                 <tr key={book.id}>

@@ -34,10 +34,22 @@ export const CREATE_BOOK = gql`
 `;
 
 export const UPDATE_BOOK = gql`
-  mutation UpdateBook($id: ID!, $title: String!, $author_id: ID!) {
-    updateBook(id: $id, title: $title, author_id: $author_id) {
+  mutation UpdateBook(
+    $id: ID!
+    $title: String!
+    $description: String
+    $published_date: String
+  ) {
+    updateBook(
+      id: $id
+      title: $title
+      description: $description
+      published_date: $published_date
+    ) {
       id
       title
+      description
+      published_date
     }
   }
 `;
